@@ -3,8 +3,9 @@ import PriceChangeSection from "@/components/home/PriceChangeSection";
 import Navbar from "@/components/layout/Navbar";
 import PriceTicker from "@/components/home/PriceTicker";
 import ProductCard from "@/components/products/ProductCard";
-import { getProducts } from "@/lib/api";
+import { getProducts, getCategories } from "@/lib/api";
 import type { Product } from "@/types/product";
+import type { Category } from "@/types/category";
 import Image from "next/image";
 
 export default async function HomePage() {
@@ -14,6 +15,15 @@ export default async function HomePage() {
   } catch (error) {
     console.error("Homepage products failed to load:", error);
   }
+  // Fetch categories for navbar
+  let categories: Category[] = [];
+
+  try {
+    categories = await getCategories();
+  } catch (error) {
+    console.error("Homepage categories failed to load:", error);
+  }
+
   const priceIncreases = products
     .filter(
       (product) =>
@@ -35,7 +45,7 @@ export default async function HomePage() {
     .slice(0, 6);
   return (
   <>
-    <Navbar />
+  <Navbar categories={categories} />
     <PriceTicker products={products} />
 
     <main>

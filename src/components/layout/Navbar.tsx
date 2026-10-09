@@ -5,14 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, UserRound } from "lucide-react";
+import type { Category } from "@/types/category";
 
-type CategoryLink = {
-  name: string;
-  slug: string;
-};
+
 
 type NavbarProps = {
-  categories?: CategoryLink[];
+  categories?: Category[];
 };
 
 export default function Navbar({ categories = [] }: NavbarProps) {
@@ -82,7 +80,7 @@ export default function Navbar({ categories = [] }: NavbarProps) {
                     : "text-gray-600 hover:text-green-700"
                 }`}
               >
-                {category.name}
+                {category.nameBn}
               </Link>
             );
           })}
@@ -141,7 +139,7 @@ export default function Navbar({ categories = [] }: NavbarProps) {
                 onClick={() => setMenuOpen(false)}
                 className="font-medium text-gray-600"
               >
-                {category.name}
+                {category.nameBn}
               </Link>
             ))}
 
