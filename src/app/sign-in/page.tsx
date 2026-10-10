@@ -1,14 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { authClient } from "@/lib/auth-client";
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter();
 
+  const searchParams = useSearchParams();
+
+const requestedCallback = searchParams.get("callbackUrl");
+
+// Only allow internal product URLs.
+const callbackUrl =
+  requestedCallback &&
+  (
+    /^\/product\/[a-zA-Z0-9_-]+$/.test(requestedCallback) ||
+    requestedCallback === "/profile"
+  )
+    ? requestedCallback
+    : "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,9 +42,8 @@ export default function SignInPage() {
       }
 
       toast.success("Signed in successfully!");
-
-      router.push("/");
-      router.refresh();
+router.replace(callbackUrl);
+router.refresh();
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -113,4 +125,19 @@ export default function SignInPage() {
         </p>
       </div>
     </main>
+  );}
+
+  export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-slate-50 px-4 py-16">
+        <div className="mx-auto max-w-md rounded-2xl bg-white p-8 shadow-sm">
+          <p className="text-center text-slate-500">
+            Loading sign-in...
+          </p>
+        </div>
+      </main>
+    }>
+      <SignInForm />
+    </Suspense>
   );}
