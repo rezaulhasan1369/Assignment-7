@@ -1,62 +1,51 @@
 import type { Category } from "@/types/category";
 import type { Product } from "@/types/product";
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
 
 const API_URLS = [
+  "https://openapi.programming-hero.com/api/bazardor",
   "https://api.api-store.workers.dev/api/bazardor",
   "https://api.abcz.workers.dev/api/bazardor",
 ];
 
-export async function getProducts(): Promise<Product[]> {
+async function fetchCollection<T>(resource: "products" | "categories"): Promise<T[]> {
   for (const baseUrl of API_URLS) {
     try {
-      const response = await fetch(`${baseUrl}/products`, {
-        next: { revalidate: 300 },
+      const response = await fetch(`${baseUrl}/${resource}`, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(8000),
       });
 
       if (!response.ok) {
-        continue;
+        throw new Error(`API returned HTTP ${response.status}`);
       }
 
       const data: unknown = await response.json();
 
-      if (Array.isArray(data)) {
-        return data as Product[];
+      if (Array.isArray(data) && data.length > 0) {
+        return data as T[];
       }
+      throw new Error(`Empty or invalid ${resource} API response`);
     } catch (error) {
-      console.error(`Failed to fetch products from ${baseUrl}`, error);
+      console.error(`Failed to fetch ${resource} from ${baseUrl}`, error);
     }
   }
 
-  throw new Error("Unable to load BazarDor products.");
+  throw new Error(`Unable to load BazarDor ${resource}.`);
 }
 
-export async function getCategories(): Promise<Category[]> {
-  const endpoints = [
-    "https://api.api-store.workers.dev/api/bazardor/categories",
-    "https://api.abcz.workers.dev/api/bazardor/categories",
-  ];
+// Cache validated results, rather than raw responses or empty UI fallbacks.
+// Revalidation failures keep the last successful result; cold failures retry
+// on a later request. React cache deduplicates calls within a render.
+export const getProducts = cache(unstable_cache(
+  () => fetchCollection<Product>("products"),
+  ["bazardor-products-official-v2"],
+  { revalidate: 300 },
+));
 
-  for (const endpoint of endpoints) {
-    try {
-      const response = await fetch(endpoint, {
-        next: { revalidate: 300 },
-      });
-
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
-      }
-
-      const data: unknown = await response.json();
-
-      if (!Array.isArray(data)) {
-        throw new Error("Invalid categories API response");
-      }
-
-      return data as Category[];
-    } catch (error) {
-      console.error(`Category API failed: ${endpoint}`, error);
-    }
-  }
-
-  throw new Error("Unable to fetch categories from either API");
-}
+export const getCategories = cache(unstable_cache(
+  () => fetchCollection<Category>("categories"),
+  ["bazardor-categories-official-v2"],
+  { revalidate: 300 },
+));
