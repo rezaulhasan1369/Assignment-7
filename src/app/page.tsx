@@ -7,8 +7,11 @@ import { getProducts, getCategories } from "@/lib/api";
 import type { Product } from "@/types/product";
 import type { Category } from "@/types/category";
 import Image from "next/image";
+import { connection } from "next/server";
 
 export default async function HomePage() {
+  // Do not publish an empty prerender when the upstream API is unavailable.
+  await connection();
   let products: Product[] = [];
   try {
     products = await getProducts();
