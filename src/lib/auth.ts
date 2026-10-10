@@ -9,6 +9,14 @@ async function createAuth() {
   return betterAuth({
     baseURL: process.env.BETTER_AUTH_URL,
     database: mongodbAdapter(db, { client }),
+    account: {
+      accountLinking: {
+        enabled: true,
+        disableImplicitLinking: true,
+        allowDifferentEmails: false,
+        trustedProviders: [],
+      },
+    },
 
     emailAndPassword: {
       enabled: true,

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { UserRound, Mail, Save, ShieldCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient, socialAuthErrorMessage } from "@/lib/auth-client";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -14,8 +14,69 @@ export default function ProfilePage() {
 
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [githubStatus, setGithubStatus] = useState<"loading" | "linked" | "unlinked" | "error">("loading");
+  const [connectingGithub, setConnectingGithub] = useState(false);
+  const [linkError, setLinkError] = useState("");
+  const [accountRefresh, setAccountRefresh] = useState(0);
 
   const user = session?.user;
+  const userId = user?.id;
+
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    setGithubStatus("loading");
+    const errorCode = new URLSearchParams(window.location.search).get("error");
+    const messages: Record<string, string> = {
+      email_does_not_match: "Use a GitHub account with the same email address as your BazarDor account.",
+      unable_to_link_account: "GitHub could not be connected. Verify your GitHub email and try again.",
+      account_already_linked_to_different_user: "This GitHub account is already connected to another BazarDor account.",
+      access_denied: "GitHub authorization was cancelled.",
+      invalid_code: "GitHub authorization could not be verified. Please try again.",
+      state_not_found: "The connection attempt expired. Please try again.",
+    };
+    setLinkError(errorCode ? (Object.hasOwn(messages, errorCode) ? messages[errorCode] : "GitHub could not be connected. Please try again.") : "");
+    async function loadAccounts() {
+      try {
+        const { data, error } = await authClient.listAccounts();
+        if (!active) return;
+        if (error || !data) {
+          setGithubStatus("error");
+          return;
+        }
+        setGithubStatus(data.some((account) => account.providerId === "github") ? "linked" : "unlinked");
+      } catch {
+        if (active) setGithubStatus("error");
+      }
+    }
+    void loadAccounts();
+    return () => { active = false; };
+  }, [userId, accountRefresh]);
+
+  async function connectGithub() {
+    if (!user || connectingGithub || githubStatus !== "unlinked") return;
+    setConnectingGithub(true);
+    setLinkError("");
+    try {
+      const { data, error } = await authClient.linkSocial({
+        provider: "github",
+        callbackURL: "/profile",
+        errorCallbackURL: "/profile",
+      });
+      if (error) {
+        setLinkError(error.status === 401 ? "Your session expired. Please sign in again before connecting GitHub." : socialAuthErrorMessage(error, "github"));
+        setConnectingGithub(false);
+        return;
+      }
+      if (!data?.redirect) {
+        setConnectingGithub(false);
+        setAccountRefresh((value) => value + 1);
+      }
+    } catch {
+      setLinkError("Unable to connect to GitHub. Please try again.");
+      setConnectingGithub(false);
+    }
+  }
 
   // Redirect guests to Sign In.
   useEffect(() => {
@@ -147,6 +208,25 @@ export default function ProfilePage() {
             </div>
 
             {/* Edit profile */}
+            <section className="mb-8 space-y-3" aria-label="Connected accounts">
+              <h3 className="text-lg font-semibold text-slate-900">Connected Accounts</h3>
+              <p className="text-sm text-slate-500">
+                Connect GitHub to sign in to this account. Your GitHub email must be verified and match your BazarDor email.
+              </p>
+              {linkError && <p role="alert" className="text-sm text-red-700">{linkError}</p>}
+              {githubStatus === "error" ? (
+                <div>
+                  <p role="alert" className="text-sm text-slate-600">Unable to check connected accounts.</p>
+                  <button type="button" onClick={() => setAccountRefresh((value) => value + 1)} className="mt-2 text-sm font-semibold text-green-700">Retry</button>
+                </div>
+              ) : (
+                <button type="button" onClick={connectGithub}
+                  disabled={githubStatus !== "unlinked" || connectingGithub}
+                  className="rounded-lg border border-slate-300 px-5 py-3 font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">
+                  {githubStatus === "loading" ? "Checking GitHub connection..." : githubStatus === "linked" ? "GitHub connected" : connectingGithub ? "Connecting to GitHub..." : "Connect GitHub"}
+                </button>
+              )}
+            </section>
             <form onSubmit={handleUpdate} className="space-y-5">
               <div>
                 <label
