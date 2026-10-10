@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient, socialAuthErrorMessage } from "@/lib/auth-client";
 
 type SocialProvider = "google" | "github";
 
@@ -105,8 +105,7 @@ function SignInForm() {
 
       if (error) {
         toast.error(
-          error.message ||
-            `Unable to sign in with ${provider}.`
+          socialAuthErrorMessage(error, provider)
         );
         setSocialLoading(null);
       }

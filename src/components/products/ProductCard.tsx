@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Product } from "@/types/product";
+import { formatUnit } from "@/lib/format-unit";
 
 type ProductCardProps = {
   product: Product;
@@ -44,7 +45,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       </h3>
 
       <p className="mb-5 text-sm text-gray-500">
-        {product.categoryNameBn} · {product.unit}
+        {product.categoryNameBn} · {formatUnit(product.unit)}
       </p>
 
       <div className="flex items-end justify-between border-t border-gray-100 pt-4">

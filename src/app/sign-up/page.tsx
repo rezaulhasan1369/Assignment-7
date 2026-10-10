@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { authClient } from "@/lib/auth-client";
+import { authClient, socialAuthErrorMessage } from "@/lib/auth-client";
 
 type SocialProvider = "google" | "github";
 
@@ -104,8 +104,7 @@ export default function SignUpPage() {
 
       if (error) {
         toast.error(
-          error.message ||
-            `Unable to continue with ${provider}.`
+          socialAuthErrorMessage(error, provider)
         );
         setSocialLoading(null);
       }

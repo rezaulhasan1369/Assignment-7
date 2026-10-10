@@ -9,6 +9,7 @@ import { getAuth } from "@/lib/auth";
 import { getCategories, getProducts } from "@/lib/api";
 
 import type { Product } from "@/types/product";
+import { formatUnit } from "@/lib/format-unit";
 
 type ProductPageProps = {
   params: Promise<{
@@ -142,7 +143,7 @@ export default async function ProductPage({
               </h1>
 
               <p className="mt-2 text-slate-500">
-                একক: {product.unit}
+                একক: {formatUnit(product.unit)}
               </p>
             </div>
 
