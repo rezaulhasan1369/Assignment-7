@@ -1,3 +1,4 @@
+import { Toaster } from "react-hot-toast";
 import type { Metadata } from "next";
 import { Hind_Siliguri } from "next/font/google";
 import "./globals.css";
@@ -23,6 +24,25 @@ export default function RootLayout({
     <html lang="bn">
       <body className={`${hindSiliguri.className} antialiased`}>
         {children}
+        <Toaster
+    position="top-right"
+    toastOptions={{
+      duration: 4000,
+      style: {
+        background: "#ffffff",
+        color: "#1e293b",
+        border: "1px solid #e2e8f0",
+        borderRadius: "12px",
+        padding: "14px 18px",
+      },
+      success: {
+        iconTheme: {
+          primary: "#059669",
+          secondary: "#ffffff",
+        },
+      },
+    }}
+  />
       </body>
     </html>
   );
