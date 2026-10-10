@@ -5,7 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-import { auth } from "@/lib/auth";
+import { getAuth } from "@/lib/auth";
 import { getCategories, getProducts } from "@/lib/api";
 
 import type { Product } from "@/types/product";
@@ -29,6 +29,7 @@ export default async function ProductPage({
   // 1. BETTER AUTH — SERVER-SIDE SESSION CHECK
   // ==========================================
 
+  const auth = await getAuth();
   const session = await auth.api.getSession({
     headers: await headers(),
   });
